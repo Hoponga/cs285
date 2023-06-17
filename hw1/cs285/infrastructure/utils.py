@@ -27,7 +27,7 @@ def sample_trajectory(env, policy, max_path_length, render=False):
 
         # use the most recent ob to decide what to do
         obs.append(ob)
-        ac = policy.get_action(obs) # HINT: query the policy's get_action function
+        ac = policy.get_action(obs).detach().numpy() # HINT: query the policy's get_action function
         ac = ac[0]
         acs.append(ac)
 
@@ -46,7 +46,7 @@ def sample_trajectory(env, policy, max_path_length, render=False):
 
         if rollout_done:
             break
-
+    print(image_obs)
     return Path(obs, image_obs, acs, rewards, next_obs, terminals)
 
 def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, render=False):
@@ -60,7 +60,7 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
     timesteps_this_batch = 0
     paths = []
     while timesteps_this_batch < min_timesteps_per_batch:
-        new_path = sample_trajectory(env, policy, max_path_length)
+        new_path = sample_trajectory(env, policy, max_path_length, render)
         
         
         paths.append(new_path)
@@ -77,9 +77,9 @@ def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False):
     """
     paths = []
     for _ in range(ntraj): 
-        paths.append(sample_trajectory(env, policy, max_path_length))
+        paths.append(sample_trajectory(env, policy, max_path_length, render))
 
-    return paths
+    return np.array(paths)
 
 ############################################
 ############################################

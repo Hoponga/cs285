@@ -75,13 +75,18 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     ##################################
 
     def get_action(self, obs: np.ndarray) -> np.ndarray:
+        if not isinstance(obs, np.ndarray): 
+            obs = np.array(obs)
+        
         if len(obs.shape) > 1:
             observation = obs
         else:
-            observation = obs[None]
+            
+            observation = obs[0]
+        #print(observation.shape)
 
         # TODO return the action that the policy prescribes
-        return self.forward(obs)
+        return self.forward(ptu.from_numpy(observation))
 
         
 
@@ -116,10 +121,15 @@ class MLPPolicySL(MLPPolicy):
     ):
         # TODO: update the policy and return the loss
         self.optimizer.zero_grad()
+        
 
         my_ac = self.get_action(observations)
+        #print(my_ac.shape, ptu.from_numpy(actions).shape)
+        loss = self.loss(my_ac, ptu.from_numpy(actions))
 
-        loss = self.loss(my_ac, actions)
+        
+
+        #loss = self.loss(my_ac, actions)
         loss.backward() 
         self.optimizer.step()
         return {
