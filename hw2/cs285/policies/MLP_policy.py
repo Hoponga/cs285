@@ -87,6 +87,18 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # query the policy with observation(s) to get selected action(s)
     def get_action(self, obs: np.ndarray) -> np.ndarray:
         # TODO: get this from HW1
+        if not isinstance(obs, np.ndarray): 
+            obs = np.array(obs)
+        
+        if len(obs.shape) > 1:
+            observation = obs
+        else:
+            
+            observation = obs[0]
+        #print(observation.shape)
+
+        # TODO return the action that the policy prescribes
+        return self.forward(ptu.from_numpy(observation))
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
@@ -134,7 +146,13 @@ class MLPPolicyPG(MLPPolicy):
         # HINT2: you will want to use the `log_prob` method on the distribution returned
             # by the `forward` method
 
-        TODO
+        policy_actions = self.forward(observations)
+        log_probs = policy_actions.log_prob(actions)
+        eff_loss = -np.dot(log_probs, advantages)
+        eff_loss.backward()
+        self.optimizer.step()
+
+
 
         if self.nn_baseline:
             ## TODO: update the neural network baseline using the q_values as
@@ -143,11 +161,13 @@ class MLPPolicyPG(MLPPolicy):
 
             ## Note: You will need to convert the targets into a tensor using
                 ## ptu.from_numpy before using it in the loss
-
-            TODO
-
+            predicted = self.run_baseline_prediction(observations)
+            loss = self.baseline_loss(predicted, q_values)
+            loss.backward()
+            self.baseline_optimizer.step()
+            
         train_log = {
-            'Training Loss': ptu.to_numpy(loss),
+            'Training Loss': ptu.to_numpy(eff_loss),
         }
         return train_log
 
