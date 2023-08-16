@@ -73,7 +73,8 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # use the most recent ob to decide what to do
         obs.append(ob)
-        ac = policy.get_action(obs).detach().numpy() # HINT: query the policy's get_action function
+        ac = policy.get_action(obs) # HINT: query the policy's get_action function
+        ac = ac.sample().numpy()
         ac = ac[0]
         acs.append(ac)
 
@@ -92,7 +93,6 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         if rollout_done:
             break
-    print(image_obs)
     return Path(obs, image_obs, acs, rewards, next_obs, terminals)
 
 def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, render=False, render_mode=('rgb_array')):

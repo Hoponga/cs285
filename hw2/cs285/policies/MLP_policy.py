@@ -146,29 +146,49 @@ class MLPPolicyPG(MLPPolicy):
         # HINT2: you will want to use the `log_prob` method on the distribution returned
             # by the `forward` method
 
+        print(self.ac_dim)
+        print(actions)
+        
+
         policy_actions = self.forward(observations)
         log_probs = policy_actions.log_prob(actions)
-        eff_loss = -np.dot(log_probs, advantages)
+
+        print(log_probs.shape)
+        print(observations.shape)
+        # Maximize J(theta) by minimizing -J(theta)
+        eff_loss = -(log_probs*advantages).sum()
+        #eff_loss = torch.dot(log_probs, advantages)
+
+        
         eff_loss.backward()
         self.optimizer.step()
+        self.optimizer.zero_grad()
 
-
+        train_log = {
+            
+            'Training Loss': ptu.to_numpy(eff_loss),
+        }
 
         if self.nn_baseline:
             ## TODO: update the neural network baseline using the q_values as
             ## targets. The q_values should first be normalized to have a mean
             ## of zero and a standard deviation of one.
+            q_targets = normalize(q_values, q_values.mean(), q_values.std())
 
             ## Note: You will need to convert the targets into a tensor using
                 ## ptu.from_numpy before using it in the loss
+            q_targets = ptu.from_numpy(q_targets)
+
             predicted = self.run_baseline_prediction(observations)
-            loss = self.baseline_loss(predicted, q_values)
+            loss = self.baseline_loss(predicted, q_targets)
+            train_log['Baseline Loss'] = ptu.to_numpy(loss)
             loss.backward()
             self.baseline_optimizer.step()
+            self.baseline_optimizer.zero_grad()
             
-        train_log = {
-            'Training Loss': ptu.to_numpy(eff_loss),
-        }
+
+
+       
         return train_log
 
     def run_baseline_prediction(self, observations):

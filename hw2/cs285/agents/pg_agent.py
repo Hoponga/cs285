@@ -74,13 +74,13 @@ class PGAgent(BaseAgent):
         # Note: q_values should first be a 2D list where the first dimension corresponds to 
         # trajectories and the second corresponds to timesteps, 
         # then flattened to a 1D numpy array.
-        q_values = None 
+        q_values = np.empty(0) 
 
 
         if not self.reward_to_go:
             for reward_traj in rewards_list: 
-                if q_values: 
-                    q_values = np.concatenate(q_values, self._discounted_return(reward_traj))
+                if q_values.size != 0: 
+                    q_values = np.concatenate((q_values, self._discounted_return(reward_traj)))
                 else: 
                     q_values = self._discounted_return(reward_traj)
         
@@ -104,6 +104,9 @@ class PGAgent(BaseAgent):
 
         # Estimate the advantage when nn_baseline is True,
         # by querying the neural network that you're using to learn the value function
+        print("in advantage function")
+        print(obs.shape, q_values.shape)
+
         if self.nn_baseline:
             values_unnormalized = self.actor.run_baseline_prediction(obs)
             ## ensure that the value predictions and q_values have the same dimensionality
