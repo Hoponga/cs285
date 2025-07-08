@@ -81,12 +81,11 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         if len(obs.shape) > 1:
             observation = obs
         else:
-            
-            observation = obs[0]
-        #print(observation.shape)
+            observation = obs[None, :]  # Add batch dimension for single observation
 
         # TODO return the action that the policy prescribes
-        return self.forward(ptu.from_numpy(observation))
+        action = self.forward(ptu.from_numpy(observation))
+        return ptu.to_numpy(action)
 
         
 
@@ -100,9 +99,11 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # return more flexible objects, such as a
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor) -> Any:
-        if self.discrete: 
-            return self.logits_na(observation)
-        return self.mean_net(observation) 
+        mean = self.mean_net(observation)
+        std = torch.exp(self.logstd)
+        dist = distributions.Normal(mean, std)
+        action = dist.rsample()
+        return action
 
         
 
@@ -122,14 +123,9 @@ class MLPPolicySL(MLPPolicy):
         # TODO: update the policy and return the loss
         self.optimizer.zero_grad()
         
-
-        my_ac = self.get_action(observations)
-        #print(my_ac.shape, ptu.from_numpy(actions).shape)
+        my_ac = self.forward(ptu.from_numpy(observations))  
         loss = self.loss(my_ac, ptu.from_numpy(actions))
 
-        
-
-        #loss = self.loss(my_ac, actions)
         loss.backward() 
         self.optimizer.step()
         return {

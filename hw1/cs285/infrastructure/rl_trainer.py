@@ -117,6 +117,7 @@ class RL_Trainer(object):
             self.total_envsteps += envsteps_this_batch
 
             # relabel the collected obs with actions from a provided expert policy
+            
             if relabel_with_expert and itr>=start_relabel_with_expert:
                 paths = self.do_relabel_with_expert(expert_policy, paths)  # HW1: implement this function below
 
@@ -218,8 +219,9 @@ class RL_Trainer(object):
         # HINT: query the policy (using the get_action function) with paths[i]["observation"]
         # and replace paths[i]["action"] with these expert labels
         for i in range(len(paths)): 
-            expert_action = expert_policy.get_action(paths[i]["observation"])
-            paths[i]["action"] = expert_action 
+            # Get expert actions for all observations in this path at once
+            expert_actions = expert_policy.get_action(paths[i]["observation"])
+            paths[i]["action"] = expert_actions
 
         return paths
 

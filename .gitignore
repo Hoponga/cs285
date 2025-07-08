@@ -44,6 +44,7 @@ htmlcov/
 .nox/
 .coverage
 .coverage.*
+*.kailashr-mlt
 .cache
 nosetests.xml
 coverage.xml

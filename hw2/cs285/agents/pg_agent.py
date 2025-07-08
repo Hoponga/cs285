@@ -90,8 +90,8 @@ class PGAgent(BaseAgent):
         # Estimate Q^{pi}(s_t, a_t) by the discounted sum of rewards starting from t
         else:
             for reward_traj in rewards_list: 
-                if q_values: 
-                    q_values = np.concatenate(q_values, self._discounted_cumsum(reward_traj))
+                if q_values.size != 0: 
+                    q_values = np.concatenate((q_values, self._discounted_cumsum(reward_traj)))
                 else: 
                     q_values = self._discounted_cumsum(reward_traj)
         return q_values
@@ -208,7 +208,7 @@ class PGAgent(BaseAgent):
         """
         list_of_discounted_cumsums = np.zeros(len(rewards))
         
-        for i in range(rewards): 
+        for i in range(len(rewards)): 
             list_of_discounted_cumsums[i] = self._discounted_return(rewards[i:])[-1]
 
 
