@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import copy
-
+from cs285.infrastructure import pytorch_util as ptu
 ############################################
 ############################################
 
@@ -74,9 +74,9 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
         # use the most recent ob to decide what to do
         obs.append(ob)
         ac = policy.get_action(ob) # HINT: query the policy's get_action function
-        ac = ac.sample().numpy()
-        ac = ac[0]
+        ac = ptu.to_numpy(ac.sample())[0]
         acs.append(ac)
+
 
         # take that action and record results
         ob, rew, done, _ = env.step(ac)
@@ -88,7 +88,8 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # TODO end the rollout if the rollout ended
         # HINT: rollout can end due to done, or due to max_path_length
-        rollout_done = (done or max_path_length == steps) # HINT: this is either 0 or 1
+        rollout_done = (done or max_path_length >= steps) # HINT: this is either 0 or 1
+        #print(f"rollout_done: {rollout_done} at step {steps}")
         terminals.append(rollout_done)
 
         if rollout_done:
@@ -111,7 +112,10 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
         
         
         paths.append(new_path)
+
         timesteps_this_batch += get_pathlength(new_path)
+        #print(f"timesteps_this_batch: {timesteps_this_batch}")
+        #print(f"min_timesteps_per_batch: {min_timesteps_per_batch}")
 
     return paths, timesteps_this_batch
 

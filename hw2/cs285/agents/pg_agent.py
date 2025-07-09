@@ -3,7 +3,8 @@ import numpy as np
 from .base_agent import BaseAgent
 from cs285.policies.MLP_policy import MLPPolicyPG
 from cs285.infrastructure.replay_buffer import ReplayBuffer
-
+from cs285.infrastructure.utils import normalize
+from cs285.infrastructure import pytorch_util as ptu
 
 class PGAgent(BaseAgent):
     def __init__(self, env, agent_params):
@@ -108,7 +109,7 @@ class PGAgent(BaseAgent):
         print(obs.shape, q_values.shape)
 
         if self.nn_baseline:
-            values_unnormalized = self.actor.run_baseline_prediction(obs)
+            values_unnormalized = ptu.to_numpy(self.actor.run_baseline_prediction(obs))
             ## ensure that the value predictions and q_values have the same dimensionality
             ## to prevent silent broadcasting errors
             assert values_unnormalized.ndim == q_values.ndim
@@ -116,7 +117,9 @@ class PGAgent(BaseAgent):
                 ## that the predictions have the same mean and standard deviation as
                 ## the current batch of q_values
 
-            values = (values_unnormalized)*np.std(q_values)/np.std(values_unnormalized) + np.mean(q_values) - np.mean(values_unnormalized)
+            values = normalize(values_unnormalized, values_unnormalized.mean(), values_unnormalized.std())
+
+            #values = (values_unnormalized)*np.std(q_values)/np.std(values_unnormalized) + np.mean(q_values) - np.mean(values_unnormalized)
 
 
             if self.gae_lambda is not None:

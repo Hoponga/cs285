@@ -8,6 +8,8 @@ import numpy as np
 import torch
 from torch import distributions
 
+from cs285.infrastructure.utils import normalize
+
 from cs285.infrastructure import pytorch_util as ptu
 from cs285.policies.base_policy import BasePolicy
 
@@ -137,6 +139,7 @@ class MLPPolicyPG(MLPPolicy):
         self.baseline_loss = nn.MSELoss()
 
     def update(self, observations, actions, advantages, q_values=None):
+        self.optimizer.zero_grad()
         observations = ptu.from_numpy(observations)
         actions = ptu.from_numpy(actions)
         advantages = ptu.from_numpy(advantages)
@@ -157,12 +160,13 @@ class MLPPolicyPG(MLPPolicy):
         
         eff_loss.backward()
         self.optimizer.step()
-        self.optimizer.zero_grad()
+        
 
         train_log = {
             'Training Loss': ptu.to_numpy(eff_loss),
         }
         if self.nn_baseline:
+            self.baseline_optimizer.zero_grad()
             ## TODO: update the neural network baseline using the q_values as
             ## targets. The q_values should first be normalized to have a mean
             ## of zero and a standard deviation of one.
@@ -177,7 +181,7 @@ class MLPPolicyPG(MLPPolicy):
             train_log['Baseline Loss'] = ptu.to_numpy(loss)
             loss.backward()
             self.baseline_optimizer.step()
-            self.baseline_optimizer.zero_grad()
+            
         return train_log
 
     def run_baseline_prediction(self, observations):
@@ -190,6 +194,7 @@ class MLPPolicyPG(MLPPolicy):
             Output: np.ndarray of size [N]
 
         """
-        observations = ptu.from_numpy(observations)
+        if isinstance(observations, np.ndarray):
+            observations = ptu.from_numpy(observations)
         pred = self.baseline(observations)
-        return ptu.to_numpy(pred.squeeze())
+        return pred.squeeze()
